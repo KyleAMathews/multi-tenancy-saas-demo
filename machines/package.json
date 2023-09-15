@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "libsql": "^0.1.12",
+    "node-sql-parser": "^4.10.0",
+    "uuid": "^9.0.1",
+    "xstate": "^4.38.2",
+    "yjs": "^13.6.7"
+  }
+}

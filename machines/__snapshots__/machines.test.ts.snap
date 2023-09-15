@@ -1,0 +1,33 @@
+// Bun Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`update a robot name 1`] = `
+{
+  "done": true,
+  "error": false,
+  "mutator": "updateRobotName",
+  "request": {
+    "id": "123",
+    "name": "beep",
+  },
+  "response": {
+    "ok": true,
+  },
+  "value": "responded",
+}
+`;
+
+exports[`create/delete dbs 1`] = `
+{
+  "foo": true,
+}
+`;
+
+exports[`create/delete dbs 2`] = `
+[
+  {
+    "email": "alice@example.org",
+    "id": 1,
+    "name": "Alice",
+  },
+]
+`;
