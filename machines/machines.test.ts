@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { expect, test } from "vitest"
 import * as Y from "yjs"
 import fs from "fs"
 import path from "path"
@@ -77,7 +77,7 @@ test(`update a robot name`, async () => {
 
   const { id, clientCreate, serverResponded, ...toSnapshot } = requestObject
   expect(toSnapshot).toMatchSnapshot()
-  expect(requestObject.done).toBeTrue()
+  expect(requestObject.done).toBeTruthy()
   expect(robots.get(requestObject.request.id).name).toEqual(newName)
 
   newName = `boop`
@@ -194,7 +194,7 @@ test(`create/delete dbs`, async () => {
     request: { name: `foo` },
   })
 
-  expect(dupRequestObject.error).toBeTrue()
+  expect(dupRequestObject.error).toBeTruthy()
 
   // Test running a valid and then invalid query.
   const selectReq = await createRequest({
@@ -214,7 +214,7 @@ test(`create/delete dbs`, async () => {
     },
   })
 
-  expect(insertReq.error).toBeTrue()
+  expect(insertReq.error).toBeTruthy()
 
   // Test deleting a db.
   await createRequest({
@@ -223,6 +223,6 @@ test(`create/delete dbs`, async () => {
     request: { name: `foo` },
   })
 
-  expect(dbs.has(`foo`)).toBeFalse()
-  expect(fs.existsSync(requestObject.response.dbPath)).toBeFalse()
+  expect(dbs.has(`foo`)).toBeFalsy()
+  expect(fs.existsSync(requestObject.response.dbPath)).toBeFalsy()
 })

@@ -1,6 +1,8 @@
 import * as Y from "yjs"
 
+const isServerSync = true
 export function listen({ doc, serverConfig }) {
+  console.log(`ydoc listen`)
   const requests = doc.getArray(`requests`)
   requests.observe(async (event) => {
     const inserted = event.changes.delta.find(

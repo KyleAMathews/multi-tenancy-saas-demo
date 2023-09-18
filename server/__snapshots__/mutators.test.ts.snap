@@ -1,18 +1,25 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`create/delete dbs 1`] = `
-{
-  "foo": true,
-}
+exports[`serverConfig > createDb 1`] = `
+[
+  "dbPath",
+  "name",
+]
 `;
 
-exports[`create/delete dbs 2`] = `
+exports[`serverConfig > createDb 2`] = `
 [
-  {
-    "email": "alice@example.org",
-    "id": 1,
-    "name": "Alice",
-  },
+  "dbPath",
+  "name",
+  "total",
+  "completed",
+]
+`;
+
+exports[`serverConfig > deleteDb 1`] = `
+[
+  "dbPath",
+  "name",
 ]
 `;
 

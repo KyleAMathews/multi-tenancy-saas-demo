@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-aria-components": "1.0.0-beta.0",
+    "react-dom": "^18.2.0",
+    "situated": "^0.0.4"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
