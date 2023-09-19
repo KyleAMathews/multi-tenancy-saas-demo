@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@libsql/client": "^0.3.4",
     "libsql": "^0.1.12",
     "node-sql-parser": "^4.10.0",
     "uuid": "^9.0.1",

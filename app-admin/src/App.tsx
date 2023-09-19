@@ -135,29 +135,41 @@ function App() {
                   borderBottom: `1px solid gray`,
                 }}
               >
-                <h3 style={{marginTop: 0, marginBottom: `0.5rem`}}>{db.name}</h3>
-                <a href={`http://localhost:10000/todos/${db.name}`}>
-                  Open Instance
-                </a>
-                <div>
-                  {db.total} TODOs with {db.completed} completed
-                </div>
-                <div style={{marginBottom: `0.5rem`}}>path: {db.dbPath}</div>
-                <button
-                  style={{ border: `1px solid gray`, marginRight: `0.5rem` }}
-                  onClick={async () => {
-                    await createRequest({
-                      doc: rootDoc,
-                      mutator: `deleteDb`,
-                      request: {
-                        name: db.name,
-                      },
-                    })
-                  }}
-                >
-                  delete "{db.name}"
-                </button>
-                <SelectModal requests={requests} dbName={db.name} />
+                <h3 style={{ marginTop: 0, marginBottom: `0.5rem` }}>
+                  {db.name}
+                </h3>
+                <div>{db.state}</div>
+                {db.state === `READY` && (
+                  <div>
+                    <a href={`http://localhost:10000/todos/${db.name}`}>
+                      Open Instance
+                    </a>
+                    <div>
+                      {db.total} TODOs with {db.completed} completed
+                    </div>
+                    <div style={{ marginBottom: `0.5rem` }}>
+                      path: {db.dbPath}
+                    </div>
+                    <button
+                      style={{
+                        border: `1px solid gray`,
+                        marginRight: `0.5rem`,
+                      }}
+                      onClick={async () => {
+                        await createRequest({
+                          doc: rootDoc,
+                          mutator: `deleteDb`,
+                          request: {
+                            name: db.name,
+                          },
+                        })
+                      }}
+                    >
+                      delete "{db.name}"
+                    </button>
+                    <SelectModal requests={requests} dbName={db.name} />
+                  </div>
+                )}
               </div>
             )
           })}

@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, test } from "vitest"
+import { beforeAll, afterAll, describe, expect, test } from "vitest"
 import * as Y from "yjs"
 import fs from "fs"
 import path from "path"
@@ -6,6 +6,10 @@ import Database from "libsql"
 import { listen } from "../machines/server"
 import { createRequest } from "../machines/client"
 import { serverConfig } from "./mutators"
+import * as util from "node:util"
+import * as child_process from "node:child_process"
+
+const execAsync = util.promisify(child_process.exec)
 
 let tmpDir: string = ``
 let doc
@@ -22,6 +26,21 @@ beforeAll(async () => {
     console.error(`Failed to create directory:`, err)
   }
   listen({ doc, serverConfig: serverConfig({ dbsDir: tmpDir }) })
+})
+
+// Cleanup
+afterAll(async () => {
+  let hasDb = true
+  try {
+    await execAsync(`turso db list | grep foo`)
+  } catch (e) {
+    console.log(e)
+    hasDb = false
+  }
+  if (hasDb) {
+    const destroyOutput = await execAsync(`turso db destroy foo --yes`)
+    console.log({ destroyOutput })
+  }
 })
 
 test(`update a robot name`, async () => {
@@ -80,20 +99,21 @@ describe(`serverConfig`, () => {
       request: { name: `foo` },
     })
 
+    console.log({ requestObject })
     expect(requestObject.response.name).toEqual(`foo`)
 
     expect(Object.keys(requestObject.response)).toMatchSnapshot()
     expect(Object.keys(doc.getMap(`dbs`).get(`foo`))).toMatchSnapshot()
     expect(doc.getMap(`dbs`).get(`foo`).completed).toEqual(0)
     expect(doc.getMap(`dbs`).get(`foo`).total).toEqual(1)
-    expect(fs.existsSync(requestObject.response.dbPath)).toBeTruthy()
-  })
+  }, 10000)
   test(`deleteDb`, async () => {
     const requestObject = await createRequest({
       doc,
       mutator: `deleteDb`,
       request: { name: `foo` },
     })
+    console.log({ requestObject })
 
     expect(requestObject.response.name).toEqual(`foo`)
     expect(Object.keys(requestObject.response)).toMatchSnapshot()

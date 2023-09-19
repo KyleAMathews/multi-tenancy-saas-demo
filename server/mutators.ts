@@ -1,21 +1,23 @@
 import path from "path"
 import Parser from "node-sql-parser"
 import fs from "fs-extra"
-import { getDb } from "./get-db"
+import { createClient } from "@libsql/client"
 const parser = new Parser.Parser()
+import * as util from "node:util"
+import * as child_process from "node:child_process"
+import mapResultSet from "../map-sqlite-resultset"
+
+const execAsync = util.promisify(child_process.exec)
 
 async function setupDb(db) {
-  db.exec(`CREATE TABLE Todo (
+  await db.execute(`CREATE TABLE Todo (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL,
   completed BOOLEAN NOT NULL CHECK (completed IN (0, 1))
 );`)
-  db.exec(
+  await db.execute(
     `INSERT INTO Todo (title, completed) VALUES ('Go to Grocery Store', 0)`
   )
-}
-function deleteDb(dbPath) {
-  return fs.unlinkSync(dbPath)
 }
 
 export const serverConfig = ({ dbsDir }) => {
@@ -47,16 +49,44 @@ export const serverConfig = ({ dbsDir }) => {
             return { error: `DB Already exists` }
           }
         }
-        const dbPath = path.join(dbsDir, `${state.request.name}.db`)
-        if (fs.existsSync(dbPath)) {
+
+        let createOutput
+        let urlOutput
+        let tokenOutput
+        dbs.set(state.request.name, {
+          name: state.request.name,
+          state: `INITIALIZING`,
+        })
+        try {
+          createOutput = await execAsync(
+            `turso db create --group demo-multi-tenant-saas ${state.request.name}`
+          )
+          dbs.set(state.request.name, {
+            name: state.request.name,
+            state: `CREATED`,
+          })
+          urlOutput = await execAsync(
+            `turso db show ${state.request.name} --url`
+          )
+          tokenOutput = await execAsync(
+            `turso db tokens create ${state.request.name}`
+          )
+          dbs.set(state.request.name, {
+            name: state.request.name,
+            state: `CREATING TABLES`,
+          })
+        } catch (e) {
+          console.log(e)
           return function () {
-            return {
-              error: `DB Already exists on disk (though oddly not in the map)`,
-            }
+            return { error: e }
           }
         }
+        console.log({ createOutput, urlOutput, tokenOutput })
 
-        const db = getDb(dbsDir, state.request.name)
+        const url = urlOutput.stdout.trim()
+        const authToken = tokenOutput.stdout.trim()
+        console.log({ url, authToken })
+        const db = createClient({ url, authToken })
         await setupDb(db)
         // Async work first and then return func w/ any sync changes.
         // Validate db doesn't exist in both yjs and on disk.
@@ -65,12 +95,14 @@ export const serverConfig = ({ dbsDir }) => {
         // TODO also a test to run queries.
         return function () {
           dbs.set(state.request.name, {
-            dbPath,
+            url,
+            authToken,
+            state: `READY`,
             name: state.request.name,
             total: 1,
             completed: 0,
           })
-          return { dbPath, name: state.request.name }
+          return { url, name: state.request.name }
         }
       },
       deleteDb: async function ({ state, doc }) {
@@ -82,32 +114,43 @@ export const serverConfig = ({ dbsDir }) => {
             }
           }
         }
-        const dbPath = path.join(dbsDir, `${state.request.name}.db`)
-        if (!fs.existsSync(dbPath)) {
+
+        let destroyOutput
+        try {
+          destroyOutput = await execAsync(
+            `turso db destroy ${state.request.name} --yes`
+          )
+        } catch (e) {
+          console.log(e)
           return function () {
-            return {
-              error: `DB doesn't exist on disk`,
-            }
+            return { error: e }
           }
         }
 
-        deleteDb(dbPath)
         return function () {
           dbs.delete(state.request.name)
-          return { dbPath, name: state.request.name }
+          return { name: state.request.name }
         }
       },
-      selectDb: async function ({ state }) {
+      selectDb: async function ({ state, doc }) {
         try {
-          const db = getDb(dbsDir, state.request.name)
+          const dbInfo = doc.getMap(`dbs`).get(state.request.name)
+          const db = createClient({
+            url: dbInfo.url,
+            authToken: dbInfo.authToken,
+          })
           const ast = parser.astify(state.request.sql)
           if (ast.type === `select`) {
             console.log(`query`, state.request.sql)
-            let results
-            results = db.prepare(state.request.sql).all()
+            const results = mapResultSet.mapResultSet(
+              await db.execute(state.request.sql)
+            )
             // Async work first and then return func w/ any sync changes.
             return function () {
-              return { ok: true, results }
+              return {
+                ok: true,
+                results,
+              }
             }
           } else {
             return function () {

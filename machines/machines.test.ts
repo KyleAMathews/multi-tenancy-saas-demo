@@ -2,9 +2,10 @@ import { expect, test } from "vitest"
 import * as Y from "yjs"
 import fs from "fs"
 import path from "path"
-import Database from "libsql"
+import { createClient } from "@libsql/client"
 const { Parser } = require(`node-sql-parser`)
 const parser = new Parser()
+import { mapResultSet } from "../map-sqlite-resultset"
 
 import { listen } from "./server"
 import { createRequest } from "./client"
@@ -108,11 +109,11 @@ test(`create/delete dbs`, async () => {
   }
 
   async function setupDb(dbPath) {
-    const db = new Database(dbPath)
-    db.exec(
+    const db = createClient({ url: `file:${dbPath}` })
+    await db.execute(
       `CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)`
     )
-    db.exec(
+    await db.execute(
       `INSERT INTO users (id, name, email) VALUES (1, 'Alice', 'alice@example.org')`
     )
   }
@@ -159,13 +160,16 @@ test(`create/delete dbs`, async () => {
       },
       selectDb: async function ({ state, doc }) {
         const dbPath = path.join(dirPath, `${state.request.name}.db`)
-        const db = new Database(dbPath)
+        const db = createClient({ url: `file:${dbPath}` })
         const ast = parser.astify(state.request.sql)
         if (ast.type === `select`) {
-          const results = db.prepare(state.request.sql).all()
+          const results = await db.execute(state.request.sql)
           // Async work first and then return func w/ any sync changes.
           return function () {
-            return { ok: true, results }
+            return {
+              ok: true,
+              results: mapResultSet(results),
+            }
           }
         } else {
           return function () {

@@ -6,10 +6,11 @@ import { fileURLToPath } from "url"
 import fs from "fs-extra"
 import { setupWSConnection, getYDoc } from "situated"
 import listen from "../machines/server"
-import Database from "libsql"
+import mapResultSet from "../map-sqlite-resultset"
+console.log({ mapResultSet })
 import Parser from "node-sql-parser"
 import { serverConfig } from "./mutators"
-import { getDb } from "./get-db"
+import { createClient } from "@libsql/client"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -40,19 +41,20 @@ app.get(`*`, function (request, response) {
   response.sendFile(path.resolve(__dirname, `../dist/index.html`))
 })
 
-app.post(`/invalidate/:dbName`, (req, res) => {
+app.post(`/invalidate/:dbName`, async (req, res) => {
   const dbName = req.params.dbName
 
   const dbs = getYDoc(`app-doc`).getMap(`dbs`)
 
   if (dbs.has(dbName)) {
+    const dbInfo = dbs.get(dbName)
     // Query for total + completed and set.
-    const db = getDb(dbsDir, dbName)
-    const totals = db
-      .prepare(
+    const db = createClient({ url: dbInfo.url, authToken: dbInfo.authToken })
+    const totals = mapResultSet.mapResultSet(
+      await db.execute(
         `select completed, count(*) as count from todo group by completed`
       )
-      .all()
+    )
     const ydocDb = dbs.get(dbName)
     console.log({ ydocDb, totals })
     ydocDb.total = totals.map((row) => row.count).reduce((a, b) => a + b, 0)
@@ -83,4 +85,3 @@ server.on(`upgrade`, (request, socket, head) => {
     wsServer.emit(`connection`, socket, request)
   })
 })
-

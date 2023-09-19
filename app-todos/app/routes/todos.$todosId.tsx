@@ -11,10 +11,12 @@ import {
 } from "@remix-run/react";
 import { useRef, useEffect } from "react";
 import { getDb } from "~/db.server";
+import { mapResultSet } from "../../../map-sqlite-resultset";
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
-  const db = getDb(params.todosId)
-  const todos: Todo[] = db.prepare(`select * from todo`).all();
+  const db = getDb(params.todosId);
+  console.log(db)
+  const todos: Todo[] = mapResultSet(await db.execute(`select * from todo`));
   console.log({ todos });
   return json({
     todos: todos.map((todo) => {
@@ -24,72 +26,81 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
 };
 
 export let action: V2_ActionFunction = async ({ params, request }) => {
-  const dbName = params.todosId
-  const db = getDb(params.todosId)
+  const dbName = params.todosId;
+  const db = getDb(params.todosId);
   if (request.method === "POST") {
     const data = new URLSearchParams(await request.text());
     const title = data.get("title") ?? "";
-    const res = db.prepare(`INSERT INTO Todo (title, completed) VALUES (?, 0)`).run(title);
-    console.log({res})
+    const res = await db.execute({
+      sql: `INSERT INTO Todo (title, completed) VALUES (?, 0)`,
+      args: [title],
+    });
+    console.log({ res });
     await fetch(`http://localhost:3000/invalidate/${params.todosId}`, {
       method: `post`,
-    })
+    });
     return json(res, {
       status: 201,
     });
   }
-  if (request.method === 'PUT') {
-    const data = new URLSearchParams(await request.text())
-    const todoId = data.get('completed')
-    console.log(todoId)
+  if (request.method === "PUT") {
+    const data = new URLSearchParams(await request.text());
+    const todoId = data.get("completed");
+    console.log(todoId);
     if (!todoId)
       return json(
-        { error: 'Todo id must be defined' },
+        { error: "Todo id must be defined" },
         {
           status: 400,
         }
-      )
-    const todo = db.prepare(`SELECT * from Todo where id = ?`).get(todoId)
-    console.log(todo)
+      );
+    const todo = mapResultSet(await db.execute({
+      sql: `SELECT * from Todo where id = ?`,
+      args: [todoId],
+    }))[0]
+    console.log(todo);
     if (!todo) {
       return json(
-        { error: 'Todo does not exist' },
+        { error: "Todo does not exist" },
         {
           status: 400,
         }
-      )
+      );
     }
-    db.prepare(`UPDATE TODO set completed=? where id = ?`).run(todo.completed === 1 ? 0 : 1, todoId)
+    await db.execute({
+      sql: `UPDATE TODO set completed=? where id = ?`,
+      args: [todo.completed === 1 ? 0 : 1, todoId],
+    });
 
     console.log({
       method: `post`,
-      url: `http://localhost:3000/invalidate/${params.todosId}`
-    })
+      url: `http://localhost:3000/invalidate/${params.todosId}`,
+    });
 
     await fetch(`http://localhost:3000/invalidate/${params.todosId}`, {
       method: `post`,
-    })
-    return json(`ok`, { status: 200 })
+    });
+    return json(`ok`, { status: 200 });
   }
-  if (request.method === 'DELETE') {
-    const data = new URLSearchParams(await request.text())
-    const todoId = data.get('delete')
-    console.log(todoId)
+  if (request.method === "DELETE") {
+    const data = new URLSearchParams(await request.text());
+    const todoId = data.get("delete");
+    console.log(todoId);
     if (!todoId)
       return json(
-        { error: 'Todo id must be defined' },
+        { error: "Todo id must be defined" },
         {
           status: 400,
         }
-      )
-    db.prepare(`DELETE from TODO where id = ?`).run(todoId)
+      );
+    await db.execute({ sql: `DELETE from TODO where id = ?`, args: [todoId] });
     await fetch(`http://localhost:3000/invalidate/${params.todosId}`, {
       method: `post`,
-    })
-    return json(`ok`, { status: 200 })
+    });
+    return json(`ok`, { status: 200 });
   }
 
-  return null
+  return null;
 };
 
 type LoaderData = {
@@ -98,7 +109,7 @@ type LoaderData = {
 
 export default function Index() {
   let data = useLoaderData<LoaderData>();
-  let params = useParams()
+  let params = useParams();
   let formRef = useRef<HTMLFormElement | null>(null);
   const transition = useNavigation();
   console.log({ data, formRef, transition });
@@ -148,8 +159,21 @@ export default function Index() {
         ))}
       </ul>
       <Form ref={formRef} method="post">
-        <input style={{border: `1px solid gray`, marginRight: `0.5rem`}} name="title" type="text" />
-        <button style={{border: `1px solid gray`, padding: `0.25rem`, marginRight: `0.5rem`}} type="submit">Add</button>
+        <input
+          style={{ border: `1px solid gray`, marginRight: `0.5rem` }}
+          name="title"
+          type="text"
+        />
+        <button
+          style={{
+            border: `1px solid gray`,
+            padding: `0.25rem`,
+            marginRight: `0.5rem`,
+          }}
+          type="submit"
+        >
+          Add
+        </button>
       </Form>
     </div>
   );
