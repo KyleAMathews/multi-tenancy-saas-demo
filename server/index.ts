@@ -44,22 +44,25 @@ app.get(`*`, function (request, response) {
 app.post(`/invalidate/:dbName`, async (req, res) => {
   const dbName = req.params.dbName
 
-  const dbs = getYDoc(`app-doc`).getMap(`dbs`)
+  const doc = getYDoc(`app-doc`)
+  const dbs = doc.getMap(`dbs`)
 
   if (dbs.has(dbName)) {
-    const dbInfo = dbs.get(dbName)
+    const ydocDb = dbs.get(dbName)
     // Query for total + completed and set.
-    const db = createClient({ url: dbInfo.url, authToken: dbInfo.authToken })
+    const db = createClient({ url: ydocDb.url, authToken: ydocDb.authToken })
     const totals = mapResultSet.mapResultSet(
       await db.execute(
         `select completed, count(*) as count from todo group by completed`
       )
     )
-    const ydocDb = dbs.get(dbName)
     console.log({ ydocDb, totals })
-    ydocDb.total = totals.map((row) => row.count).reduce((a, b) => a + b, 0)
-    ydocDb.completed = totals.find((row) => row.completed === 1)?.count || 0
-    dbs.set(dbName, ydocDb)
+    doc.transact(() => {
+      ydocDb.total = totals.map((row) => row.count).reduce((a, b) => a + b, 0)
+      ydocDb.completed = totals.find((row) => row.completed === 1)?.count || 0
+      ydocDb.updatedAt = new Date().toJSON()
+      dbs.set(dbName, ydocDb)
+    })
     console.log({ totals })
     res.send(`ok`)
   }

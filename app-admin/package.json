@@ -13,7 +13,8 @@
     "react": "^18.2.0",
     "react-aria-components": "1.0.0-beta.0",
     "react-dom": "^18.2.0",
-    "situated": "^0.0.4"
+    "situated": "^0.0.4",
+    "timeago.js": "^4.0.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",

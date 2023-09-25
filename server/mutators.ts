@@ -68,6 +68,7 @@ export const serverConfig = ({ dbsDir }) => {
         dbs.set(state.request.name, {
           name: state.request.name,
           state: `INITIALIZING`,
+          updatedAt: new Date().toJSON(),
         })
         try {
           createOutput = await execAsync(
@@ -76,6 +77,7 @@ export const serverConfig = ({ dbsDir }) => {
           dbs.set(state.request.name, {
             name: state.request.name,
             state: `CREATED`,
+            updatedAt: new Date().toJSON(),
           })
           urlOutput = await execAsync(
             `turso db show ${state.request.name} --url`
@@ -86,6 +88,7 @@ export const serverConfig = ({ dbsDir }) => {
           dbs.set(state.request.name, {
             name: state.request.name,
             state: `CREATING TABLES`,
+            updatedAt: new Date().toJSON(),
           })
         } catch (e) {
           console.log(e)
@@ -113,6 +116,7 @@ export const serverConfig = ({ dbsDir }) => {
             name: state.request.name,
             total: 1,
             completed: 0,
+            updatedAt: new Date().toJSON(),
           })
           return { url, name: state.request.name }
         }
