@@ -12,7 +12,7 @@ import {
 import { useYjs, useSubscribeYjs, useAwarenessStates } from "situated"
 import "./App.css"
 import { createRequest } from "../../machines/client"
-import { format } from 'timeago.js';
+import { format } from "timeago.js"
 window.createRequest = createRequest
 
 function SelectModal({ dbName, requests }) {
@@ -126,7 +126,9 @@ function App() {
       <div>
         {Object.values(dbs)
           .reverse()
-          .sort((a, b) => a.updatedAt < b.updatedAt)
+          .sort((a, b) => {
+            return a.updatedAt > b.updatedAt ? -1 : a.updatedAt < b.updatedAt ? 1 : 0
+          })
           .map((db) => {
             return (
               <div
