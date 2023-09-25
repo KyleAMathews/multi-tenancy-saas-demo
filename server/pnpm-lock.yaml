@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@coffeeandfun/google-profanity-words':
+    specifier: ^2.1.0
+    version: 2.1.0
   '@libsql/client':
     specifier: ^0.3.4
     version: 0.3.4
@@ -36,7 +39,7 @@ dependencies:
 devDependencies:
   bun-types:
     specifier: latest
-    version: 1.0.2
+    version: 1.0.3
   tsx:
     specifier: ^3.12.10
     version: 3.12.10
@@ -45,6 +48,10 @@ devDependencies:
     version: 0.34.4
 
 packages:
+
+  /@coffeeandfun/google-profanity-words@2.1.0:
+    resolution: {integrity: sha512-j7/N2C01g5W22ReQ4laVR5MdTFRidDLkVY9z6z9Mresla83sd9vQalMXypQnT1+RuHErEfGIYNm5/Hu/LF/zzA==}
+    dev: false
 
   /@esbuild-kit/cjs-loader@2.4.4:
     resolution: {integrity: sha512-NfsJX4PdzhwSkfJukczyUiZGc7zNNWZcEAyqeISpDnn0PTfzMJR1aR8xAIPskBejIxBJbIgCCMzbaYa9SXepIg==}
@@ -610,8 +617,8 @@ packages:
       ieee754: 1.2.1
     dev: false
 
-  /bun-types@1.0.2:
-    resolution: {integrity: sha512-yqBp2SX9cqr5/GReb56uCfM+YP+Hntx3XPjbqX1VJXqOBu+Yqw8iWRFLKFIsz9uEfykLgflhramQ8a5Jgo+Tlg==}
+  /bun-types@1.0.3:
+    resolution: {integrity: sha512-XlyKVdYCHa7K5PHYGcwOVOrGE/bMnLS51y7zFA3ZAAXyiQ6dTaNXNCWTTufgII/6ruN770uhAXphQmzvU/r2fQ==}
     dev: true
 
   /bytes@3.1.2:

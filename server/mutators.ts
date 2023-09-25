@@ -6,6 +6,8 @@ const parser = new Parser.Parser()
 import * as util from "node:util"
 import * as child_process from "node:child_process"
 import mapResultSet from "../map-sqlite-resultset"
+import { ProfanityEngine } from "@coffeeandfun/google-profanity-words"
+const profanity = new ProfanityEngine()
 
 const execAsync = util.promisify(child_process.exec)
 
@@ -47,6 +49,16 @@ export const serverConfig = ({ dbsDir }) => {
         if (dbs.has(state.request.name)) {
           return function () {
             return { error: `DB Already exists` }
+          }
+        }
+
+        const isProfane = await profanity.hasCurseWords(
+          state.request.name.split(`-`).join(` `).split(`_`).join(` `)
+        )
+        if (isProfane) {
+          console.log(`is profane`, isProfane)
+          return function () {
+            return { error: `Profane db names are not allowed.` }
           }
         }
 

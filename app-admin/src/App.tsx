@@ -148,7 +148,7 @@ function App() {
                       {db.total} TODOs with {db.completed} completed
                     </div>
                     <div style={{ marginBottom: `0.5rem` }}>
-                      path: {db.dbPath}
+                      <em>db: {db.url}</em>
                     </div>
                     <button
                       style={{
