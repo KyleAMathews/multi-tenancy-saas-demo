@@ -15,6 +15,18 @@ import { createRequest } from "../../machines/client"
 import { format } from "timeago.js"
 window.createRequest = createRequest
 
+function makeid(length) {
+  let result = ""
+  const characters = "abcdefghijklmnopqrstuvwxyz0123456789"
+  const charactersLength = characters.length
+  let counter = 0
+  while (counter < length) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength))
+    counter += 1
+  }
+  return result
+}
+
 function SelectModal({ dbName, requests }) {
   const selects = requests
     .filter((request) => {
@@ -29,7 +41,14 @@ function SelectModal({ dbName, requests }) {
 
   return (
     <DialogTrigger>
-      <Button>Query TODO Database</Button>
+      <Button
+        style={{
+          border: `1px solid gray`,
+          marginRight: `0.5rem`,
+        }}
+      >
+        Query
+      </Button>
       <Modal>
         <Dialog>
           {({ close }) => (
@@ -91,7 +110,7 @@ function App() {
 
   return (
     <div>
-      <h1 style={{ marginTop: 0 }}>TODO SaaS Admin</h1>
+      <h1 style={{ marginTop: 0 }}>TODOs SaaS Admin</h1>
       <form
         style={{
           paddingBottom: `2rem`,
@@ -127,7 +146,11 @@ function App() {
         {Object.values(dbs)
           .reverse()
           .sort((a, b) => {
-            return a.updatedAt > b.updatedAt ? -1 : a.updatedAt < b.updatedAt ? 1 : 0
+            return a.updatedAt > b.updatedAt
+              ? -1
+              : a.updatedAt < b.updatedAt
+              ? 1
+              : 0
           })
           .map((db) => {
             return (
@@ -155,6 +178,30 @@ function App() {
                     <div style={{ marginBottom: `0.5rem` }}>
                       <em>db: {db.url}</em>
                     </div>
+                    <SelectModal requests={requests} dbName={db.name} />
+                    <button
+                      style={{
+                        border: `1px solid gray`,
+                        marginRight: `0.5rem`,
+                      }}
+                      onClick={async () => {
+                        const name = `${db.name}-${
+                          new Date().toISOString().split("T")[0]
+                        }-${makeid(5)}`
+                        const maybeTruncated =
+                          name.length < 28 ? name : name.substring(0, 27)
+                        await createRequest({
+                          doc: rootDoc,
+                          mutator: `createDb`,
+                          request: {
+                            name: maybeTruncated,
+                            fromDb: db.name,
+                          },
+                        })
+                      }}
+                    >
+                      Clone
+                    </button>
                     <button
                       style={{
                         border: `1px solid gray`,
@@ -170,9 +217,8 @@ function App() {
                         })
                       }}
                     >
-                      delete "{db.name}"
+                      Delete
                     </button>
-                    <SelectModal requests={requests} dbName={db.name} />
                   </div>
                 )}
               </div>

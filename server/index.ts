@@ -80,7 +80,13 @@ const server = app.listen(port, () => {
   console.log(`API listening on port ${port}`)
   const doc = getYDoc(`app-doc`)
   console.log(`got doc`)
-  listen.listen({ doc, serverConfig: serverConfig({ dbsDir }) })
+  listen.listen({
+    doc,
+    serverConfig: serverConfig({
+      adminUrl: process.env.TURSO_URL,
+      adminAuthToken: process.env.TURSO_AUTH_TOKEN,
+    }),
+  })
 })
 
 server.on(`upgrade`, (request, socket, head) => {

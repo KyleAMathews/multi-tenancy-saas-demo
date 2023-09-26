@@ -10,12 +10,16 @@ import {
   useNavigation,
 } from "@remix-run/react";
 import { useRef, useEffect } from "react";
-import { getDb } from "~/db.server";
+import { getDb, syncAdminDb } from "~/db.server";
 import { mapResultSet } from "../../../map-sqlite-resultset";
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
+  // This will only sync the first time.
+  console.time(`sync ${params.todosId}`)
+  await syncAdminDb(params.todosId)
+  console.timeEnd(`sync ${params.todosId}`)
+
   const db = getDb(params.todosId);
-  console.log(db)
   const todos: Todo[] = mapResultSet(await db.execute(`select * from todo`));
   console.log({ todos });
   return json({

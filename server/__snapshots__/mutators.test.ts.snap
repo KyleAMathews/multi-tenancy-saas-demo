@@ -1,5 +1,24 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`serverConfig > clone 1`] = `
+[
+  "url",
+  "name",
+]
+`;
+
+exports[`serverConfig > clone 2`] = `
+[
+  "url",
+  "authToken",
+  "state",
+  "name",
+  "total",
+  "completed",
+  "updatedAt",
+]
+`;
+
 exports[`serverConfig > createDb 1`] = `
 [
   "url",
@@ -15,10 +34,17 @@ exports[`serverConfig > createDb 2`] = `
   "name",
   "total",
   "completed",
+  "updatedAt",
 ]
 `;
 
 exports[`serverConfig > deleteDb 1`] = `
+[
+  "name",
+]
+`;
+
+exports[`serverConfig > deleteDb 2`] = `
 [
   "name",
 ]

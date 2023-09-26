@@ -5,7 +5,7 @@ import { createClient } from "@libsql/client"
 const parser = new Parser.Parser()
 import * as util from "node:util"
 import * as child_process from "node:child_process"
-import mapResultSet from "../map-sqlite-resultset"
+import { mapResultSet } from "./map-sqlite-resultset"
 import { ProfanityEngine } from "@coffeeandfun/google-profanity-words"
 const profanity = new ProfanityEngine()
 
@@ -22,8 +22,16 @@ async function setupDb(db) {
   )
 }
 
-export const serverConfig = ({ dbsDir }) => {
+export const serverConfig = ({ adminUrl, adminAuthToken }) => {
+  // Create the admin db
+  const adminDb = createClient({
+    url: adminUrl,
+    authToken: adminAuthToken,
+  })
   return {
+    context: {
+      adminDb,
+    },
     mutators: {
       ping: async function ({ state, doc }) {
         return function () {
@@ -56,7 +64,6 @@ export const serverConfig = ({ dbsDir }) => {
           state.request.name.split(`-`).join(` `).split(`_`).join(` `)
         )
         if (isProfane) {
-          console.log(`is profane`, isProfane)
           return function () {
             return { error: `Profane db names are not allowed.` }
           }
@@ -70,10 +77,12 @@ export const serverConfig = ({ dbsDir }) => {
           state: `INITIALIZING`,
           updatedAt: new Date().toJSON(),
         })
+        let command = `turso db create --group demo-multi-tenant-saas ${state.request.name}`
+        if (state.request.fromDb) {
+          command += ` --from-db=${state.request.fromDb}`
+        }
         try {
-          createOutput = await execAsync(
-            `turso db create --group demo-multi-tenant-saas ${state.request.name}`
-          )
+          createOutput = await execAsync(command)
           dbs.set(state.request.name, {
             name: state.request.name,
             state: `CREATED`,
@@ -101,22 +110,46 @@ export const serverConfig = ({ dbsDir }) => {
         const url = urlOutput.stdout.trim()
         const authToken = tokenOutput.stdout.trim()
         console.log({ url, authToken })
+
         const db = createClient({ url, authToken })
-        await setupDb(db)
+
+        // Don't need to do setup for cloned dbs.
+        if (!state.request.fromDb) {
+          await setupDb(db)
+        }
         // Async work first and then return func w/ any sync changes.
         // Validate db doesn't exist in both yjs and on disk.
         // Then create db and create table.
         //
         // TODO also a test to run queries.
+        const updatedAt = new Date().toJSON()
+        await adminDb.execute({
+          sql: `INSERT INTO dbs values (:url, :authToken, :state, :name, :updatedAt)`,
+          args: {
+            url,
+            authToken,
+            state: `READY`,
+            name: state.request.name,
+            updatedAt,
+          },
+        })
+
+        const totals = mapResultSet(
+          await db.execute(
+            `select completed, count(*) as count from Todo group by completed`
+          )
+        )
+        console.log({ totals })
+
         return function () {
           dbs.set(state.request.name, {
             url,
             authToken,
             state: `READY`,
             name: state.request.name,
-            total: 1,
-            completed: 0,
-            updatedAt: new Date().toJSON(),
+            total: totals.map((row) => row.count).reduce((a, b) => a + b, 0),
+            completed: totals.find((row) => row.completed === 1)?.count || 0,
+            updatedAt,
           })
           return { url, name: state.request.name }
         }
@@ -143,6 +176,13 @@ export const serverConfig = ({ dbsDir }) => {
           }
         }
 
+        await adminDb.execute({
+          sql: `DELETE FROM dbs WHERE name=:name`,
+          args: {
+            name: state.request.name,
+          },
+        })
+
         return function () {
           dbs.delete(state.request.name)
           return { name: state.request.name }
@@ -158,9 +198,7 @@ export const serverConfig = ({ dbsDir }) => {
           const ast = parser.astify(state.request.sql)
           if (ast.type === `select`) {
             console.log(`query`, state.request.sql)
-            const results = mapResultSet.mapResultSet(
-              await db.execute(state.request.sql)
-            )
+            const results = mapResultSet(await db.execute(state.request.sql))
             // Async work first and then return func w/ any sync changes.
             return function () {
               return {
