@@ -71,10 +71,7 @@ app.post(`/invalidate/:dbName`, async (req, res) => {
 const wsServer = new WebSocketServer({ noServer: true })
 wsServer.on(`connection`, setupWSConnection)
 
-let port = 3000
-if (process.env.NODE_ENV === `production`) {
-  port = 4000
-}
+const port = 3000
 
 const server = app.listen(port, () => {
   console.log(`API listening on port ${port}`)
