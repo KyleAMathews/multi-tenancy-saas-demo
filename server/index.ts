@@ -33,7 +33,7 @@ app.use(
 )
 
 // Serve static assets.
-app.use(`/`, express.static(path.join(__dirname, `../dist`)))
+app.use(`/`, express.static(path.join(__dirname, `./dist`)))
 
 // handle every other route with index.html, which will contain
 // a script tag to your application's JavaScript file(s).

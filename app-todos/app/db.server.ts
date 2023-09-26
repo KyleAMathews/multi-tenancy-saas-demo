@@ -13,18 +13,20 @@ const adminDb = createClient({
 });
 
 const syncedForDbs = new Set();
-const dbs = new Map()
+const dbs = new Map();
 async function syncAdminDb(dbName) {
   if (!syncedForDbs.has(dbName)) {
+    console.time(`sync db from turso ${dbName}`);
     await adminDb.sync();
+    console.timeEnd(`sync db from turso ${dbName}`);
     syncedForDbs.add(dbName);
   }
 
-  const results = await adminDb.execute(`SELECT * from dbs`)
-  const dbRows = mapResultSet(results)
-  dbRows.forEach(dbInfo => {
-    dbs.set(dbInfo.name, dbInfo)
-  })
+  const results = await adminDb.execute(`SELECT * from dbs`);
+  const dbRows = mapResultSet(results);
+  dbRows.forEach((dbInfo) => {
+    dbs.set(dbInfo.name, dbInfo);
+  });
 }
 
 syncAdminDb(`initial`);
@@ -32,7 +34,7 @@ syncAdminDb(`initial`);
 const getDb = (dbName) =>
   singleton(`getDb${dbName}`, () => {
     console.log(`get db singleton ${dbName}`);
-    const db = dbs.get(dbName)
+    const db = dbs.get(dbName);
     return createClient({ url: db.url, authToken: db.authToken });
   });
 

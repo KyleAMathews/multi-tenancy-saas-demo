@@ -15,9 +15,7 @@ import { mapResultSet } from "../../../map-sqlite-resultset";
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   // This will only sync the first time.
-  console.time(`sync ${params.todosId}`)
   await syncAdminDb(params.todosId)
-  console.timeEnd(`sync ${params.todosId}`)
 
   const db = getDb(params.todosId);
   const todos: Todo[] = mapResultSet(await db.execute(`select * from todo`));

@@ -9,6 +9,8 @@
   },
   "scripts": {
     "dev": "tsx index.ts",
+    "build": "cd ../app-admin && npm run build && cp -r dist ../server/",
+    "start": "NODE_ENV=production tsx index.ts",
     "test": "vitest"
   },
   "peerDependencies": {
