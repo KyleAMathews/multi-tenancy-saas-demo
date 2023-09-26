@@ -8,7 +8,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     request.headers.get("X-Forwarded-Host") ?? request.headers.get("host");
 
   try {
-    const db = getDb(`foo`)
+    const db = getDb(`do-not-delete`)
     const url = new URL("/", `http://${host}`);
     // if we can connect to the database and make a simple query
     // and make a HEAD request to ourselves, then we're good.
