@@ -27,6 +27,8 @@ function makeid(length) {
   return result
 }
 
+const appServerBase = process.env.NODE_ENV === `production` ? `https://app-server-todos-saas.fly.dev/todos/` : `http://localhost:10000/todos/`
+
 function SelectModal({ dbName, requests }) {
   const selects = requests
     .filter((request) => {
@@ -169,7 +171,7 @@ function App() {
                 <div>{db.state}</div>
                 {db.state === `READY` && (
                   <div>
-                    <a href={`http://localhost:10000/todos/${db.name}`}>
+                    <a href={`${appServerBase}${db.name}`}>
                       Open Instance
                     </a>
                     <div>

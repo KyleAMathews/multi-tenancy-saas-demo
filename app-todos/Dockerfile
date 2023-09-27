@@ -4,9 +4,6 @@ FROM node:20-bullseye-slim as base
 # set for base and all layer that inherit from it
 ENV NODE_ENV production
 
-# Install openssl for Prisma
-RUN apt-get update && apt-get install -y openssl sqlite3
-
 # Install all node_modules, including dev dependencies
 FROM base as deps
 
@@ -47,6 +44,5 @@ COPY --from=production-deps /myapp/node_modules /myapp/node_modules
 COPY --from=build /myapp/build /myapp/build
 COPY --from=build /myapp/public /myapp/public
 COPY --from=build /myapp/package.json /myapp/package.json
-COPY --from=build /myapp/start.sh /myapp/start.sh
 
 CMD [ "npm", "run", "start" ]

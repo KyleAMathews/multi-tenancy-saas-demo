@@ -6,7 +6,7 @@ import { fileURLToPath } from "url"
 import fs from "fs-extra"
 import { setupWSConnection, getYDoc } from "situated"
 import listen from "../machines/server"
-import mapResultSet from "../map-sqlite-resultset"
+import { mapResultSet } from "./map-sqlite-resultset"
 console.log({ mapResultSet })
 import Parser from "node-sql-parser"
 import { serverConfig } from "./mutators"
@@ -51,7 +51,7 @@ app.post(`/invalidate/:dbName`, async (req, res) => {
     const ydocDb = dbs.get(dbName)
     // Query for total + completed and set.
     const db = createClient({ url: ydocDb.url, authToken: ydocDb.authToken })
-    const totals = mapResultSet.mapResultSet(
+    const totals = mapResultSet(
       await db.execute(
         `select completed, count(*) as count from todo group by completed`
       )
@@ -73,16 +73,31 @@ wsServer.on(`connection`, setupWSConnection)
 
 const port = 3000
 
-const server = app.listen(port, () => {
+const server = app.listen(port, async () => {
   console.log(`API listening on port ${port}`)
   const doc = getYDoc(`app-doc`)
   console.log(`got doc`)
+  const { context, mutators } = serverConfig({
+    adminUrl: process.env.TURSO_URL,
+    adminAuthToken: process.env.TURSO_ADMIN_DB_AUTH_TOKEN,
+  })
+
+  console.log({ db: context.adminDb })
+  const dbsResult = mapResultSet(
+    await context.adminDb.execute(`select * from dbs`)
+  )
+
+  const dbs = doc.getMap(`dbs`)
+  dbsResult.map((db) => {
+    const yjsDb = dbs.has(db.name) ? dbs.get(db.name) : {}
+    const combined = { ...db, ...yjsDb }
+    console.log({ combined })
+    dbs.set(combined.name, combined)
+  })
+
   listen.listen({
     doc,
-    serverConfig: serverConfig({
-      adminUrl: process.env.TURSO_URL,
-      adminAuthToken: process.env.TURSO_AUTH_TOKEN,
-    }),
+    serverConfig: { context, mutators },
   })
 })
 

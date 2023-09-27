@@ -12,6 +12,7 @@ export function listen({ doc, serverConfig }) {
     )
     const itemArray = retain?.retain || 0
     const state = event.target.get(itemArray)
+    console.log({ state })
     if (state.done !== true) {
       if (
         serverConfig.mutators.hasOwnProperty(state.mutator) &&

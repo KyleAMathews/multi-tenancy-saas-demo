@@ -2,9 +2,15 @@ import { createClient } from "@libsql/client";
 import { singleton } from "./singleton.server";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
-import { mapResultSet } from "../../map-sqlite-resultset";
+import { mapResultSet } from "./map-sqlite-resultset";
 
 console.log(`getting ydoc`);
+
+console.log({
+  url: `file:admin.db`,
+  syncUrl: process.env.TURSO_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+})
 
 const adminDb = createClient({
   url: `file:admin.db`,

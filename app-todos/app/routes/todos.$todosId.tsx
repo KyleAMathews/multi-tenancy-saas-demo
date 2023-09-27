@@ -11,7 +11,7 @@ import {
 } from "@remix-run/react";
 import { useRef, useEffect } from "react";
 import { getDb, syncAdminDb } from "~/db.server";
-import { mapResultSet } from "../../../map-sqlite-resultset";
+import { mapResultSet } from "../map-sqlite-resultset";
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   // This will only sync the first time.
@@ -27,6 +27,8 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   });
 };
 
+const urlBase = process.env.NODE_ENV === `production` ? `https://admin-todos-saas.fly.dev/` : `http://localhost:3000/`
+
 export let action: V2_ActionFunction = async ({ params, request }) => {
   const dbName = params.todosId;
   const db = getDb(params.todosId);
@@ -38,7 +40,7 @@ export let action: V2_ActionFunction = async ({ params, request }) => {
       args: [title],
     });
     console.log({ res });
-    await fetch(`http://localhost:3000/invalidate/${params.todosId}`, {
+    await fetch(`${urlBase}invalidate/${params.todosId}`, {
       method: `post`,
     });
     return json(res, {
@@ -74,12 +76,8 @@ export let action: V2_ActionFunction = async ({ params, request }) => {
       args: [todo.completed === 1 ? 0 : 1, todoId],
     });
 
-    console.log({
-      method: `post`,
-      url: `http://localhost:3000/invalidate/${params.todosId}`,
-    });
 
-    await fetch(`http://localhost:3000/invalidate/${params.todosId}`, {
+    await fetch(`${urlBase}invalidate/${params.todosId}`, {
       method: `post`,
     });
     return json(`ok`, { status: 200 });
@@ -96,7 +94,7 @@ export let action: V2_ActionFunction = async ({ params, request }) => {
         }
       );
     await db.execute({ sql: `DELETE from TODO where id = ?`, args: [todoId] });
-    await fetch(`http://localhost:3000/invalidate/${params.todosId}`, {
+    await fetch(`${urlBase}invalidate/${params.todosId}`, {
       method: `post`,
     });
     return json(`ok`, { status: 200 });
