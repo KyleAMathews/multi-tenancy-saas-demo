@@ -7,10 +7,11 @@ import fs from "fs-extra"
 import { setupWSConnection, getYDoc } from "situated"
 import listen from "../machines/server"
 import { mapResultSet } from "./map-sqlite-resultset"
-console.log({ mapResultSet })
 import Parser from "node-sql-parser"
 import { serverConfig } from "./mutators"
 import { createClient } from "@libsql/client"
+import { adapter } from "trpc-yjs/adapter"
+import { appRouter } from "./trpc"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -19,7 +20,6 @@ const baseDir =
   process.env.BASE_DATA_DIR || path.resolve(process.cwd(), `.cache`)
 const file = path.join(baseDir, `db.json`)
 const dbsDir = path.join(baseDir, `dbs`)
-console.log({ dbsDir, dir: path.dirname(dbsDir) })
 fs.ensureDirSync(path.dirname(file))
 fs.ensureDirSync(dbsDir)
 
@@ -56,14 +56,12 @@ app.post(`/invalidate/:dbName`, async (req, res) => {
         `select completed, count(*) as count from todo group by completed`
       )
     )
-    console.log({ ydocDb, totals })
     doc.transact(() => {
       ydocDb.total = totals.map((row) => row.count).reduce((a, b) => a + b, 0)
       ydocDb.completed = totals.find((row) => row.completed === 1)?.count || 0
       ydocDb.updatedAt = new Date().toJSON()
       dbs.set(dbName, ydocDb)
     })
-    console.log({ totals })
     res.send(`ok`)
   }
 })
@@ -77,28 +75,39 @@ const server = app.listen(port, async () => {
   console.log(`API listening on port ${port}`)
   const doc = getYDoc(`app-doc`)
   console.log(`got doc`)
-  const { context, mutators } = serverConfig({
-    adminUrl: process.env.TURSO_URL,
-    adminAuthToken: process.env.TURSO_ADMIN_DB_AUTH_TOKEN,
-  })
+  // const { context, mutators } = serverConfig({
+  // adminUrl: process.env.TURSO_URL,
+  // adminAuthToken: process.env.TURSO_ADMIN_DB_AUTH_TOKEN,
+  // })
 
-  console.log({ db: context.adminDb })
-  const dbsResult = mapResultSet(
-    await context.adminDb.execute(`select * from dbs`)
-  )
+  // console.log({ db: context.adminDb })
+
+  const adminDb = createClient({
+    url: process.env.TURSO_URL,
+    authToken: process.env.TURSO_ADMIN_DB_AUTH_TOKEN,
+  })
+  const dbsResult = mapResultSet(await adminDb.execute(`select * from dbs`))
 
   const dbs = doc.getMap(`dbs`)
   dbsResult.map((db) => {
     const yjsDb = dbs.has(db.name) ? dbs.get(db.name) : {}
     const combined = { ...db, ...yjsDb }
-    console.log({ combined })
     dbs.set(combined.name, combined)
   })
 
-  listen.listen({
+  // Start adapter
+  console.log(`starting the adapter`)
+  adapter({
     doc,
-    serverConfig: { context, mutators },
+    appRouter,
+    context: { doc, adminDb },
+    onError: (e) => console.log(`error`, e),
   })
+
+  // listen.listen({
+  // doc,
+  // serverConfig: { context, mutators },
+  // })
 })
 
 server.on(`upgrade`, (request, socket, head) => {

@@ -11,9 +11,21 @@ import {
 } from "react-aria-components"
 import { useYjs, useSubscribeYjs, useAwarenessStates } from "situated"
 import "./App.css"
-import { createRequest } from "../../machines/client"
 import { format } from "timeago.js"
-window.createRequest = createRequest
+import { createTRPCProxyClient, loggerLink } from "@trpc/client"
+import { link as yjsLink } from "trpc-yjs/link"
+import { AppRouter } from "../../server/trpc"
+
+const trpc = createTRPCProxyClient<AppRouter>({
+  links: [
+    loggerLink(),
+    yjsLink({
+      doc: window.rootDoc,
+    }),
+  ],
+})
+
+window.trpc = trpc
 
 function makeid(length) {
   let result = ""
@@ -27,15 +39,18 @@ function makeid(length) {
   return result
 }
 
-const appServerBase = process.env.NODE_ENV === `production` ? `https://app-server-todos-saas.fly.dev/todos/` : `http://localhost:10000/todos/`
+const appServerBase =
+  process.env.NODE_ENV === `production`
+    ? `https://app-server-todos-saas.fly.dev/todos/`
+    : `http://localhost:10000/todos/`
 
 function SelectModal({ dbName, requests }) {
   const selects = requests
     .filter((request) => {
       return (
-        request.mutator == `selectDb` &&
-        request.request.name === dbName &&
-        request.error === false
+        request.path == `selectDb` &&
+        request.input.name === dbName &&
+        request.error !== true
       )
     })
     .reverse()
@@ -58,14 +73,11 @@ function SelectModal({ dbName, requests }) {
               onSubmit={async (e) => {
                 e.preventDefault()
                 const sql = e.target[0].value
-                const res = await createRequest({
-                  doc: rootDoc,
-                  mutator: `selectDb`,
-                  request: {
-                    name: dbName,
-                    sql,
-                  },
+                const res = await trpc.selectDb.query({
+                  name: dbName,
+                  sql,
                 })
+                console.log({ res })
               }}
             >
               <Heading>Run Query in {dbName}</Heading>
@@ -85,9 +97,9 @@ function SelectModal({ dbName, requests }) {
                   return (
                     <div>
                       <div>
-                        <pre>{request.request.sql}</pre>
+                        <pre>{request.input.sql}</pre>
                       </div>
-                      <div>{JSON.stringify(request.response.results)}</div>
+                      <div>{JSON.stringify(request.response?.results)}</div>
                     </div>
                   )
                 })}
@@ -103,7 +115,7 @@ function SelectModal({ dbName, requests }) {
 function App() {
   const { rootDoc } = useYjs()
   const [createDbError, setDbError] = useState(``)
-  const requestsArrayYjs = rootDoc.getArray(`requests`)
+  const requestsArrayYjs = rootDoc.getArray(`trpc-calls`)
   const dbsYjs = rootDoc.getMap(`dbs`)
 
   // Subscribe to updates.
@@ -123,19 +135,13 @@ function App() {
         onSubmit={async (e) => {
           e.preventDefault()
           const name = e.target[0].value
-          const newDb = await createRequest({
-            doc: rootDoc,
-            mutator: `createDb`,
-            request: {
-              name,
-            },
-          })
-
-          if (newDb.error) {
-            setDbError(newDb.response.error)
-          } else {
-            setDbError(``)
-            e.target.reset()
+          setDbError(``)
+          e.target.reset()
+          try {
+            const newDb = await trpc.createDb.mutate({ name })
+            console.log({ newDb })
+          } catch (e) {
+            setDbError(e.message)
           }
         }}
       >
@@ -171,9 +177,7 @@ function App() {
                 <div>{db.state}</div>
                 {db.state === `READY` && (
                   <div>
-                    <a href={`${appServerBase}${db.name}`}>
-                      Open Instance
-                    </a>
+                    <a href={`${appServerBase}${db.name}`}>Open Instance</a>
                     <div>
                       {db.total} TODOs with {db.completed} completed
                     </div>
@@ -192,13 +196,9 @@ function App() {
                         }-${makeid(5)}`
                         const maybeTruncated =
                           name.length < 28 ? name : name.substring(0, 27)
-                        await createRequest({
-                          doc: rootDoc,
-                          mutator: `createDb`,
-                          request: {
-                            name: maybeTruncated,
-                            fromDb: db.name,
-                          },
+                        await trpc.createDb.mutate({
+                          name: maybeTruncated,
+                          fromDb: db.name,
                         })
                       }}
                     >
@@ -210,13 +210,7 @@ function App() {
                         marginRight: `0.5rem`,
                       }}
                       onClick={async () => {
-                        await createRequest({
-                          doc: rootDoc,
-                          mutator: `deleteDb`,
-                          request: {
-                            name: db.name,
-                          },
-                        })
+                        await trpc.deleteDb.mutate({ name: db.name })
                       }}
                     >
                       Delete

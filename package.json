@@ -1,8 +1,10 @@
 {
   "name": "multi-tenancy-saas-demo",
-  "dependencies": {},
+  "dependencies": {
+    "@trpc/server": "^10.38.5",
+    "trpc-yjs": "^0.0.1"
+  },
   "devDependencies": {
-    "prettier": "^3.0.3",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
     "eslint": "^8.49.0",
@@ -10,6 +12,7 @@
     "eslint-config-react": "^1.1.7",
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-react": "^7.33.2",
+    "prettier": "^3.0.3",
     "typescript": "^5.2.2"
   }
 }

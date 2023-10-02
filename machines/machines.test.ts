@@ -5,7 +5,7 @@ import path from "path"
 import { createClient } from "@libsql/client"
 const { Parser } = require(`node-sql-parser`)
 const parser = new Parser()
-import { mapResultSet } from "../map-sqlite-resultset"
+import { mapResultSet } from "./map-sqlite-resultset"
 
 import { listen } from "./server"
 import { createRequest } from "./client"

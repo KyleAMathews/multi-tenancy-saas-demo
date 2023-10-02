@@ -10,11 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@trpc/client": "^10.38.5",
     "react": "^18.2.0",
     "react-aria-components": "1.0.0-beta.0",
     "react-dom": "^18.2.0",
-    "situated": "^0.0.4",
-    "timeago.js": "^4.0.2"
+    "situated": "^0.0.6",
+    "timeago.js": "^4.0.2",
+    "trpc-yjs": "^0.0.6"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",

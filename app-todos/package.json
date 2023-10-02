@@ -5,16 +5,15 @@
   "scripts": {
     "build": "remix build",
     "dev": "PORT=10000 remix dev -c \"npm run dev:serve\"",
-    "dev:serve": "binode --require ./mocks -- @remix-run/serve:remix-serve ./build/index.js",
+    "dev:serve": "binode -- @remix-run/serve:remix-serve ./build/index.js",
     "format": "prettier --write .",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "setup": "prisma generate && prisma migrate deploy && prisma db seed",
     "start": "remix-serve ./build/index.js",
-    "start:mocks": "binode --require ./mocks -- @remix-run/serve:remix-serve ./build/index.js",
     "test": "vitest",
     "test:e2e:dev": "start-server-and-test dev http://localhost:3000 \"npx cypress open\"",
     "pretest:e2e:run": "npm run build",
-    "test:e2e:run": "cross-env PORT=8811 start-server-and-test start:mocks http://localhost:8811 \"npx cypress run\"",
+    "test:e2e:run": "cross-env PORT=8811 start-server-and-test http://localhost:8811 \"npx cypress run\"",
     "typecheck": "tsc && tsc -p cypress",
     "validate": "run-p \"test -- --run\" lint typecheck test:e2e:run"
   },
