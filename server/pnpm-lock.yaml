@@ -11,6 +11,9 @@ dependencies:
   '@libsql/client':
     specifier: ^0.3.5
     version: 0.3.5
+  '@trpc/server':
+    specifier: ^10.38.5
+    version: 10.38.5
   cors:
     specifier: ^2.8.5
     version: 2.8.5

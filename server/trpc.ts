@@ -7,7 +7,6 @@ import * as child_process from "node:child_process"
 import { mapResultSet } from "./map-sqlite-resultset"
 import { ProfanityEngine } from "@coffeeandfun/google-profanity-words"
 const profanity = new ProfanityEngine()
-console.log(Parser)
 const parser = new Parser.Parser()
 
 const execAsync = util.promisify(child_process.exec)
@@ -71,7 +70,7 @@ export const appRouter = router({
       if (isProfane) {
         throw new TRPCError({
           code: `BAD_REQUEST`,
-          message: `Profane db names are now allowed.`,
+          message: `Profane db names are not allowed.`,
         })
       }
 
