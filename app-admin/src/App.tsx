@@ -153,6 +153,7 @@ function App() {
       <div>
         {Object.values(dbs)
           .reverse()
+          .filter(db => db.name !== `do-not-delete`)
           .sort((a, b) => {
             return a.updatedAt > b.updatedAt
               ? -1
